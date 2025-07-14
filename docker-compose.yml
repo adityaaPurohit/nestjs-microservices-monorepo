@@ -1,0 +1,159 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: nest-postgres
+    environment:
+      POSTGRES_DB: nest_user_doc_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - nest-network
+
+  # Kafka
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    container_name: nest-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - nest-network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: nest-kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - nest-network
+
+  # Auth Service
+  auth-service:
+    build:
+      context: .
+      dockerfile: apps/auth-service/Dockerfile
+    container_name: nest-auth-service
+    environment:
+      NODE_ENV: development
+      PORT: 3001
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_NAME: nest_user_doc_db
+      DATABASE_USERNAME: postgres
+      DATABASE_PASSWORD: postgres
+      JWT_SECRET: your-super-secret-jwt-key
+      JWT_REFRESH_SECRET: your-super-secret-refresh-key
+      JWT_EXPIRES_IN: 24h
+      JWT_REFRESH_EXPIRES_IN: 7d
+      KAFKA_BROKERS: kafka:29092
+    ports:
+      - "3001:3001"
+    depends_on:
+      - postgres
+      - kafka
+    networks:
+      - nest-network
+
+  # User Service
+  user-service:
+    build:
+      context: .
+      dockerfile: apps/user-service/Dockerfile
+    container_name: nest-user-service
+    environment:
+      NODE_ENV: development
+      PORT: 3002
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_NAME: nest_user_doc_db
+      DATABASE_USERNAME: postgres
+      DATABASE_PASSWORD: postgres
+      JWT_SECRET: your-super-secret-jwt-key
+      JWT_EXPIRES_IN: 24h
+      KAFKA_BROKERS: kafka:29092
+    ports:
+      - "3002:3002"
+    depends_on:
+      - postgres
+      - kafka
+    networks:
+      - nest-network
+
+  # Document Service
+  document-service:
+    build:
+      context: .
+      dockerfile: apps/document-service/Dockerfile
+    container_name: nest-document-service
+    environment:
+      NODE_ENV: development
+      PORT: 3003
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_NAME: nest_user_doc_db
+      DATABASE_USERNAME: postgres
+      DATABASE_PASSWORD: postgres
+      JWT_SECRET: your-super-secret-jwt-key
+      JWT_EXPIRES_IN: 24h
+      KAFKA_BROKERS: kafka:29092
+      UPLOAD_PATH: ./uploads
+    ports:
+      - "3003:3003"
+    volumes:
+      - ./uploads:/app/uploads
+    depends_on:
+      - postgres
+      - kafka
+    networks:
+      - nest-network
+
+  # Ingestion Service
+  ingestion-service:
+    build:
+      context: .
+      dockerfile: apps/ingestion-service/Dockerfile
+    container_name: nest-ingestion-service
+    environment:
+      NODE_ENV: development
+      PORT: 3004
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_NAME: nest_user_doc_db
+      DATABASE_USERNAME: postgres
+      DATABASE_PASSWORD: postgres
+      JWT_SECRET: your-super-secret-jwt-key
+      JWT_EXPIRES_IN: 24h
+      KAFKA_BROKERS: kafka:29092
+      UPLOAD_PATH: ./uploads
+    ports:
+      - "3004:3004"
+    volumes:
+      - ./uploads:/app/uploads
+    depends_on:
+      - postgres
+      - kafka
+    networks:
+      - nest-network
+
+volumes:
+  postgres_data:
+
+networks:
+  nest-network:
+    driver: bridge 

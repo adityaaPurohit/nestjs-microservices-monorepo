@@ -1,0 +1,38 @@
+{
+  "name": "nest-user-doc-microservices",
+  "version": "1.0.0",
+  "description": "NestJS User and Document Management Microservices",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "libs/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "start:dev": "npm run start:dev --workspaces",
+    "test": "npm run test --workspaces",
+    "lint": "npm run lint --workspaces",
+    "format": "npm run format --workspaces",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:build": "docker-compose build",
+    "docker:logs": "docker-compose logs -f",
+    "install:all": "npm install && npm run install:services",
+    "install:services": "npm install --workspace=auth-service && npm install --workspace=user-service && npm install --workspace=document-service && npm install --workspace=ingestion-service",
+    "start:auth": "npm run start:dev --workspace=auth-service",
+    "start:user": "npm run start:dev --workspace=user-service",
+    "start:document": "npm run start:dev --workspace=document-service",
+    "start:ingestion": "npm run start:dev --workspace=ingestion-service"
+  },
+  "devDependencies": {
+    "@types/node": "^20.3.1",
+    "typescript": "^5.1.3"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.0"
+  }
+}
