@@ -22,8 +22,6 @@ yarn-error.log*
 .env.development
 .env.production
 
-# Local environment templates
-env-template.txt
 
 # OS generated files
 .DS_Store
